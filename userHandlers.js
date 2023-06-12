@@ -1,30 +1,3 @@
-const users = [
-  {
-    id: 1,
-    firstname: "John",
-    lastname: "Doe",
-    email: "john.doe@example.com",
-    city: "Paris",
-    language: "English",
-  },
-  {
-    id: 2,
-    firstname: "Valeriy",
-    lastname: "Appius",
-    email: "valeriy.appius@example.com",
-    city: "Moscow",
-    language: "Russian",
-  },
-  {
-    id: 3,
-    firstname: "Ralf",
-    lastname: "Geronimo",
-    email: "ralf.geronimo@example.com",
-    city: "New York",
-    language: "Italian",
-  },
-];
-
 const database = require("./database");
 
 const getUsers = (req, res) => {
@@ -59,33 +32,34 @@ const getUsers = (req, res) => {
 
 const getUsersById = (req, res) => {
   const id = parseInt(req.params.id);
-
   database
     .query("select * from users where id = ?", [id])
     .then(([users]) => {
       users[0] != null ? res.json(users[0]) : res.status(404).send("Not found");
+      // console.log("users", users[0])
+      // res.json(users[0])
     })
     .catch((err) => {
       console.error(err);
       res.status(500).send("Error retrieving data from database");
     });
 
-  const user = users.find((user) => user.id === id);
+  // const user = users.find((user) => user.id === id);
 
-  if (user != null) {
-    res.json(user);
-  } else {
-    res.status(404).send("Not Found");
-  }
+  // if (user != null) {
+  //   res.json(user);
+  // } else {
+  //   res.status(404).send("Not Found");
+  // }
 };
 
 const postUser = (req, res) => {
-  const { firstname, lastname, email, city, language } = req.body;
-
+  const { firstname, lastname, email, city, language, hashedPassword } = req.body;
+  console.log(hashedPassword)
   database
     .query(
-      "INSERT INTO users(firstname, lastname, email, city, language) VALUES (?, ?, ?, ?, ?)",
-      [firstname, lastname, email, city, language]
+      "INSERT INTO users(firstname, lastname, email, city, language, hashedPassword) VALUES (?, ?, ?, ?, ?, ?)",
+      [firstname, lastname, email, city, language, hashedPassword]
     )
     .then(([result]) => {
       res.location(`/api/users/${result.insertId}`).sendStatus(201);
@@ -98,17 +72,18 @@ const postUser = (req, res) => {
 
 const updateUser = (req, res) => {
   const id = +req.params.id;
-  const { firstname, lastname, email, city, language } = req.body;
+  const { firstname, lastname, email, city, language, hashedPassword } = req.body;
 
   database
     .query(
-      "UPDATE users SET firstname = ?, lastname = ?, email = ?, city = ?, language = ? WHERE id = ?",
-      [firstname, lastname, email, city, language, id]
+      "UPDATE users SET firstname = ?, lastname = ?, email = ?, city = ?, language = ?, hashedPassword = ? WHERE id = ?",
+      [firstname, lastname, email, city, language, hashedPassword, id]
     )
     .then(([result]) => {
       if (result.affectedRows === 0) {
         res.status(404).send("Not found");
       } else {
+        
         res.sendStatus(204);
       }
     })
