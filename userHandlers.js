@@ -1,7 +1,7 @@
 const database = require("./database");
 
 const getUsers = (req, res) => {
-  let sql = "SELECT * FROM users"
+  let sql = "SELECT firstname, lastname, email, city, language  FROM users"
   const sqlValues = [];
 
   if (req.query.language != null) {
@@ -83,7 +83,7 @@ const updateUser = (req, res) => {
       if (result.affectedRows === 0) {
         res.status(404).send("Not found");
       } else {
-        
+
         res.sendStatus(204);
       }
     })

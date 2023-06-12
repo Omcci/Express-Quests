@@ -24,7 +24,7 @@ app.get("/api/movies/:id", movieHandlers.getMovieById);
 app.get("/api/users", usersHandlers.getUsers)
 app.get("/api/users/:id", usersHandlers.getUsersById);
 app.post("/api/movies", validateMovie, movieHandlers.postMovie)
-:d, usersHandlers.postUser)
+app.post("/api/users", hashPassword, usersHandlers.postUser)
 app.put("/api/movies/:id", validateMovie, movieHandlers.updateMovie)
 app.put("/api/users/:id",  hashPassword, usersHandlers.updateUser)
 app.delete("/api/movies/:id", movieHandlers.deleteMovie)
