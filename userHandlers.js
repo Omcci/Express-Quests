@@ -1,23 +1,21 @@
 const database = require("./database");
 
 const getUsers = (req, res) => {
-  let sql = "SELECT firstname, lastname, email, city, language  FROM users"
+  let sql = "SELECT firstname, lastname, email, city, language  FROM users";
   const sqlValues = [];
 
   if (req.query.language != null) {
-    sql += " WHERE language = ?"
-    sqlValues.push(req.query.language)
+    sql += " WHERE language = ?";
+    sqlValues.push(req.query.language);
 
     if (req.query.city != null) {
-      sql += " and city = ?"
-      sqlValues.push(req.query.city)
+      sql += " and city = ?";
+      sqlValues.push(req.query.city);
     }
   } else if (req.query.city != null) {
-    sql += " WHERE city = ?"
-    sqlValues.push(req.query.city)
+    sql += " WHERE city = ?";
+    sqlValues.push(req.query.city);
   }
-
-  
 
   database
     .query(sql, sqlValues)
@@ -33,7 +31,7 @@ const getUsers = (req, res) => {
 const getUsersById = (req, res) => {
   const id = parseInt(req.params.id);
   database
-    .query("select * from users where id = ?", [id])
+    .query("select id, firstname, lastname, email, city, language  from users where id = ?", [id])
     .then(([users]) => {
       users[0] != null ? res.json(users[0]) : res.status(404).send("Not found");
       // console.log("users", users[0])
@@ -53,13 +51,58 @@ const getUsersById = (req, res) => {
   // }
 };
 
+const getUsersByEmailWithPasswordAndPassToNext = (req, res, next) => {
+  const { email } = req.body;
+  database
+    .query("select * from users where email = ?", [email])
+    .then(([users]) => {
+      if (users[0] != null) {
+        
+        req.users = users[0];
+        
+        next();
+      } else {
+        res.status(401);
+      }
+      // console.log("users", users[0])
+      // res.json(users[0])
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error retrieving data from database");
+    });
+};
+
+// const getUserByEmailWithPasswordAndPassToNext = (req, res, next) => {
+//   const { email } = req.body;
+
+//   database
+//     .query("select * from users where email = ?", [email])
+//     .then(([users]) => {
+//       if (users[0] != null) {
+        
+//         req.user = users[0];
+
+//         next();
+//       } else {
+//         res.sendStatus(401);
+//       }
+//     })
+//     .catch((err) => {
+//       console.error(err);
+//       res.status(500).send("Error retrieving data from database");
+//     });
+// };
+
+
 const postUser = (req, res) => {
-  const { firstname, lastname, email, city, language, hashedPassword } = req.body;
-  console.log(hashedPassword)
+  const { firstname, lastname, email, city, language, password } =
+    req.body;
+  
   database
     .query(
-      "INSERT INTO users(firstname, lastname, email, city, language, hashedPassword) VALUES (?, ?, ?, ?, ?, ?)",
-      [firstname, lastname, email, city, language, hashedPassword]
+      "INSERT INTO users(firstname, lastname, email, city, language, password) VALUES (?, ?, ?, ?, ?, ?)",
+      [firstname, lastname, email, city, language, password]
     )
     .then(([result]) => {
       res.location(`/api/users/${result.insertId}`).sendStatus(201);
@@ -72,18 +115,18 @@ const postUser = (req, res) => {
 
 const updateUser = (req, res) => {
   const id = +req.params.id;
-  const { firstname, lastname, email, city, language, hashedPassword } = req.body;
+  const { firstname, lastname, email, city, language, password } =
+    req.body;
 
   database
     .query(
-      "UPDATE users SET firstname = ?, lastname = ?, email = ?, city = ?, language = ?, hashedPassword = ? WHERE id = ?",
-      [firstname, lastname, email, city, language, hashedPassword, id]
+      "UPDATE users SET firstname = ?, lastname = ?, email = ?, city = ?, language = ?, password = ? WHERE id = ?",
+      [firstname, lastname, email, city, language, password, id]
     )
     .then(([result]) => {
       if (result.affectedRows === 0) {
         res.status(404).send("Not found");
       } else {
-
         res.sendStatus(204);
       }
     })
@@ -94,24 +137,22 @@ const updateUser = (req, res) => {
 };
 
 const deleteUser = (req, res) => {
-  const id = +(req.params.id)
+  const id = +req.params.id;
 
   database
-  .query(
-    "DELETE FROM users WHERE id = ?", [id]
-  )
-  .then(([result]) => {
-    if (result.affectedRows === 0) {
-      res.status(404).send("Not found")
-    } else {
-      res.sendStatus(204)
-    }
-  })
-  .catch((err) => {
-    console.error(err);
-    res.status(500).send("Error deleting the user");
-  });
-}
+    .query("DELETE FROM users WHERE id = ?", [id])
+    .then(([result]) => {
+      if (result.affectedRows === 0) {
+        res.status(404).send("Not found");
+      } else {
+        res.sendStatus(204);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error deleting the user");
+    });
+};
 
 module.exports = {
   getUsers,
@@ -119,4 +160,5 @@ module.exports = {
   postUser,
   updateUser,
   deleteUser,
+  getUsersByEmailWithPasswordAndPassToNext
 };
